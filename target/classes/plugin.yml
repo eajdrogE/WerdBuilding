@@ -1,0 +1,10 @@
+name: WerdBuilding
+version: '1.0'
+main: egordjae.werdbuilding.WerdBuilding
+api-version: '1.20'
+depend: [Towny]
+commands:
+  regbuild:
+    usage: /<command> [name]
+  verdbuild:
+    usage: /<command> [accept|denied|showmystat|showourstat]
