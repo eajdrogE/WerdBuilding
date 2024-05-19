@@ -28,8 +28,8 @@ import java.util.logging.Logger;
 public class WerdBuilding extends JavaPlugin implements Listener {
 
     private JavaPlugin plugin;
-    private FileConfiguration regConfig, logConfig;
-    private File regFile, logFile;
+    private FileConfiguration regConfig, logConfig, buildingConfig;
+    private File regFile, logFile,buildingFile;
     public static final Logger LOGGER = Logger.getLogger("verdbuilding");
     @Override
     public void onEnable() {
@@ -53,6 +53,7 @@ public class WerdBuilding extends JavaPlugin implements Listener {
         } catch (IOException | InvalidConfigurationException e) {
             LOGGER.warning(e.getMessage());
         }
+
         logFile = new File(getDataFolder(), "plugLogs.yml");
         if (!logFile.exists()) {
             logFile.getParentFile().mkdirs();
@@ -66,6 +67,23 @@ public class WerdBuilding extends JavaPlugin implements Listener {
         logConfig = new YamlConfiguration();
         try {
             logConfig.load(logFile);
+        } catch (IOException | InvalidConfigurationException e) {
+            LOGGER.warning(e.getMessage());
+        }
+
+        buildingFile = new File(getDataFolder(), "buildings.yml");
+        if (!buildingFile.exists()) {
+            buildingFile.getParentFile().mkdirs();
+            try {
+                regFile.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            saveResource("building.yml", false);
+        }
+        buildingConfig = new YamlConfiguration();
+        try {
+            buildingConfig.load(buildingFile);
         } catch (IOException | InvalidConfigurationException e) {
             LOGGER.warning(e.getMessage());
         }

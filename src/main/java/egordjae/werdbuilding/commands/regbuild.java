@@ -1,5 +1,6 @@
 package egordjae.werdbuilding.commands;
 
+import egordjae.werdbuilding.InventoryCreators;
 import egordjae.werdbuilding.commands.verdbuild;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
@@ -11,6 +12,7 @@ import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -21,12 +23,14 @@ import java.io.IOException;
 import java.util.Arrays;
 public class regbuild implements CommandExecutor{
     private JavaPlugin plugin;
-    private FileConfiguration regConfig;
-    private File regFile;
+    private FileConfiguration regConfig,buildingConfig;
+    private File regFile,buildingFile;
     public regbuild(JavaPlugin plugin) {
         this.plugin = plugin;
         this.regFile = new File(plugin.getDataFolder(), "buildRequests.yml");
         this.regConfig = YamlConfiguration.loadConfiguration(regFile);
+        this.buildingFile = new File(plugin.getDataFolder(), "building.yml");
+        this.buildingConfig = YamlConfiguration.loadConfiguration(buildingFile);
     }
 
     @Override
@@ -76,43 +80,20 @@ public class regbuild implements CommandExecutor{
                         return true;
                     }
 
-
                     switch (args[0].toLowerCase()) {
                         case "help":
                             player.sendMessage("§c/regbuild <название постройки> - подать заявку. Заявое не больше 5, подавайте внимательней - удалить заявку может только проверяющий. Нужно ОБЯЗАТЕЛЬНО стоять на месте постройки");
                             player.sendMessage("§c/regbuild - просмотреть свои заявки");
-                            return true;
+                            break;
+                        case "menu":
+                            // Создаем экземпляр InventoryCreators, создаем инвентарь и открываем его
+                            if (sender instanceof Player) {
+                                InventoryCreators inventoryCreators = new InventoryCreators(plugin, this);
+                                inventoryCreators.MultiPageInventory(); // Создаем инвентарь
+                                inventoryCreators.openInventory(player);
+                            }
+                            break;
                         default:
-                            // Проверяем количество заявок от этого игрока
-                            int playerRequests = 0;
-                            for (String key : regConfig.getKeys(false)) {
-                                if (key.startsWith(playerName + ", ")) {
-                                    playerRequests++;
-                                }
-                            }
-
-                            // Если у игрока уже есть 5 заявок, не позволяем создать новую
-                            if (playerRequests >= 5) {
-                                player.sendMessage("§cВы не можете создать больше 5 заявок.");
-                                return true;
-                            }
-
-                            String buildingName = String.join(" ", Arrays.copyOfRange(args, 0, args.length));
-                            Location location = player.getLocation();
-
-                            // Получаем город игрока с помощью Towny API
-                            String townName = "";
-                            try {
-                                Resident resident = TownyUniverse.getInstance().getResident(playerName);
-                                if (resident.hasTown()) {
-                                    townName = resident.getTown().getName();
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-
-                            saveBuildRequest(playerName, buildingName, location, townName);
-                            player.sendMessage("Ваш запрос на строительство " + buildingName + " был зарегистрирован!");
                             return true;
                     }
                 }
@@ -120,7 +101,6 @@ public class regbuild implements CommandExecutor{
         }
         return false;
     }
-
 
 
 
@@ -179,5 +159,54 @@ public class regbuild implements CommandExecutor{
         } catch (IOException | InvalidConfigurationException e) {
             e.printStackTrace();
         }
+    }
+    // Функция для подсчета заявок игрока
+    public int getPlayerRequests(String playerName, ConfigurationSection regConfig) {
+        int playerRequests = 0;
+        for (String key : regConfig.getKeys(false)) {
+            if (key.startsWith(playerName + ", ")) {
+                playerRequests++;
+            }
+        }
+        return playerRequests;
+    }
+
+    // Функция для получения имени города игрока
+    public String getPlayerTownName(String playerName) {
+        String townName = "";
+        try {
+            Resident resident = TownyUniverse.getInstance().getResident(playerName);
+            if (resident.hasTown()) {
+                townName = resident.getTown().getName();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return townName;
+    }
+
+    // Основная функция
+    public boolean processBuildRequest(String playerName, String[] args, ConfigurationSection regConfig, Player player) {
+        // Проверяем количество заявок от этого игрока
+        int playerRequests = getPlayerRequests(playerName, regConfig);
+
+        // Если у игрока уже есть 5 заявок, не позволяем создать новую
+        if (playerRequests >= 5) {
+            player.sendMessage("§cВы не можете создать больше 5 заявок.");
+            return true;
+        }
+
+        String buildingName = String.join(" ", Arrays.copyOfRange(args, 0, args.length));
+        Location location = player.getLocation();
+
+        // Получаем город игрока с помощью Towny API
+        String townName = getPlayerTownName(playerName);
+
+        saveBuildRequest(playerName, buildingName, location, townName);
+        player.sendMessage("Ваш запрос на строительство " + buildingName + " был зарегистрирован!");
+        return true;
+    }
+    public FileConfiguration getRegConfig() {
+        return this.regConfig;
     }
 }
