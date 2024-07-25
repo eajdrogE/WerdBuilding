@@ -62,7 +62,7 @@ public class verdbuild implements CommandExecutor , Listener{
                 if (lastKey != null) {
                     reloadConfig();
                     // Изменяем статус на "Ждем принятие запроса"
-                    regConfig.set(lastKey + ".status", "Ждем принятие запроса");
+                    regConfig.set(lastKey + ".status", "Ждем принятие запроса, бо");
                     try {
                         regConfig.save(regFile);
                     } catch (IOException e) {
